@@ -65,6 +65,17 @@ void print_v(vector<double> A)    //affichage de vecteur
     cout<<A[A.size()-1]<<"]";
 }
 
+void print_m(vector<vector<double>> A)    //affichage de matrice
+{
+    for( int i =0; i<A.size() ; i++){
+        cout<<"ligne"<<i<<": " ;
+        for ( int j =0; j<A.size() ; j++){
+            cout<<A[i][j]<<" " ;
+        }
+    cout<<endl ; 
+    }
+}
+
 
 int numgb(int N, const Point &P)
 {
@@ -111,6 +122,17 @@ ostream & operator <<(ostream &os, const Triangle &T){
     return os ;
 }
 
+Point point_exact(double a,double b,int N,int M,int s){
+    vector<double> xi = Subdiv(a,N);
+    vector<double> yi = Subdiv(b,M);
+    Point R;
+    Point P;
+    R.invnumgb(N, s);
+    P.x = xi[R.x];
+    P.y = yi[R.y];
+    return P;
+}
+
 
 vector<Triangle>  maillageTR(int N,int M)
 {
@@ -135,26 +157,106 @@ vector<Triangle>  maillageTR(int N,int M)
     return TRG;
 }
 
+vector<Point> sommetTR(double a,double b,int N,int M,const Triangle &T){
+    vector<Point> St = vector<Point>(3);
+    St[0] = point_exact(a,b,N,M,T.a);
+    St[1] = point_exact(a,b,N,M,T.b);
+    St[2] = point_exact(a,b,N,M,T.c);
+    return St;
+}
+
+
+vector<vector<double>> CalcMatBT(double a,double b,int M,const Triangle& t)
+{
+    vector<vector<double>> BT(2,vector<double>(2));
+    int N = t.c - t.a -2;
+    vector<Point> St = sommetTR(a,b,N,M,t);
+    Point p0 = St[0];
+    Point p1 = St[1];
+    Point p2 = St[2];
+    BT[0][0] = p1.x-p0.x;
+    BT[0][1] = p2.x-p0.x;
+    BT[1][0] = p1.y-p0.y;
+    BT[1][1] = p2.y-p0.y;
+    return BT;
+}
+
+
+
+double DetBT(double a,double b,int M,const Triangle&t)    // Derminant de BT 
+{
+    vector<vector<double>> BT = CalcMatBT(a,b,M,t);
+    return (BT[0][0]*BT[1][1]-BT[0][1]*BT[1][0]);
+}
+
+
+vector<vector<double>> GradGrad(double a,double b,int M,const Triangle &t,double (*eta)(double x,double y)){
+    int N = t.c - t.a -2;
+    vector<Point> St = sommetTR(a,b,N,M,t);
+    double D = abs(DetBT(a,b,M,t));
+    vector<vector<double>> GrdGrd(3,vector<double>(3));
+    double val = (eta(St[0].x,St[0].y)+eta(St[1].x,St[1].y)+eta(St[2].x,St[2].y));
+    GrdGrd[0][0] = 1./6/D*(pow(St[1].y-St[2].y,2)+pow(St[2].x-St[1].x,2))*val;
+    GrdGrd[0][1] = 1./6/D*((St[1].y-St[2].y)*(St[2].y-St[0].y)+(St[2].x-St[1].x)*(St[0].x-St[2].x))*val;
+    GrdGrd[0][2] = 1./6/D*((St[1].y-St[2].y)*(St[0].y-St[1].y)+(St[2].x-St[1].x)*(St[1].x-St[0].x))*val;
+    GrdGrd[1][0] = 1*GrdGrd[0][1];
+    GrdGrd[1][1] = 1./6/D*(pow(St[2].y-St[0].y,2)+pow(St[0].x-St[2].x,2))*val;
+    GrdGrd[1][2] = 1./6/D*((St[2].y-St[0].y)*(St[0].y-St[1].y)+(St[0].x-St[2].x)*(St[1].x-St[0].x))*val;
+    GrdGrd[2][0] = 1*GrdGrd[0][2];
+    GrdGrd[2][1] = 1*GrdGrd[1][2];
+    GrdGrd[2][2] = 1./6/D*(pow(St[0].y-St[1].y,2)+pow(St[1].x-St[0].x,2))*val;
+    return GrdGrd;
+}
+
+double eta(double x,double y){
+    return 2-sin(x+2*y);
+}
+
+int DansTrg(double a,double b,int N,int M,const Triangle &t,double x,double y)
+{
+    int info = 0;
+    vector<Point> St = sommetTR(a,b,N,M,t);
+    if ((x<=St[2].x)and(x>=St[0].x)and(y<=St[2].y)and(y>=St[0].y)){
+        if (St[0].x==St[1].x){
+            if((y-St[0].y)/(x-St[0].x) >= 1.){
+                info = 1;
+            }
+        }
+        else{
+            if((y-St[0].y)/(x-St[0].x) <= 1.){
+                info = 1;
+            }
+        }
+    }
+    return info;
+}
+
+
 
 
 
 
 int main(){
-
-    Point P ;
-    P.invnumgb(6,0);
-    
-    vector<Triangle> TRG =  maillageTR(4,2);
-    for (int i=0;i<16;i++){
-    cout<<TRG[i]<<endl;
-    }
-
-
-
-
-
-
-
+    int a = 1;
+    int b = 1;
+    int N = 5;
+    int M = 5;
+    vector<Triangle> TRG =  maillageTR(5,5);
+    cout<<TRG[2]<<","<<TRG[3]<<endl;
+    vector<vector<double>> BT = CalcMatBT(a,b,M,TRG[2]);
+    Point Q;
+    Q = point_exact(1,1,5,4,8);
+    cout<<Q<<endl;
+    vector<Point> St = sommetTR(a,b,N,M,TRG[2]);
+    cout<<St[0]<<St[1]<<St[2]<<endl;
+    BT = CalcMatBT(a,b,M,TRG[2]);
+    print_m(BT);
+    double Det = DetBT(a,b,M,TRG[2]);
+    cout<<Det<<endl;
+    vector<vector<double>>GrdGrd =  GradGrad(a,b,M,TRG[3],&eta);
+    print_m(GrdGrd);
+    int info = DansTrg(a,b,N,M,TRG[2],-0.5,-0.5);
+    cout<<info<<endl;
 
 
 

@@ -38,8 +38,9 @@ int num_gb_int(int N, int s);
 
 
 vector<double> Subdiv(double a,int N);
+Point point_exact(double a,double b,int N,int M,int s);
 void print_v(vector<double> A);
-
+void print_m(vector<vector<double>> A);
 
 
 class Triangle
@@ -54,8 +55,11 @@ class Triangle
 };
 ostream & operator <<(ostream &, const Triangle &);
 vector<Triangle>  maillageTR(int N,int M);
-
-
+vector<Point> sommetTR(double a,double b,int N,int M,const Triangle &);
+vector<vector<double>> CalcMatBT(double a,double b,int M,const Triangle&);
+double DetBT(double a,double b,int M,const Triangle&);
+vector<vector<double>> GradGrad(double a,double b,int M,const Triangle &t,double (*eta)(double x,double y));
+int DansTrg(double a,double b,int N,int M,const Triangle &t,double x,double y);
 
 
 
